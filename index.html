@@ -5,9 +5,904 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Decentralized Identity & Credential Vault</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      /* Base Styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #f8fafc;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      #root {
+        width: 100%;
+        min-height: 100vh;
+      }
+
+      /* Loading Screen */
+      .loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out;
+      }
+
+      .loading-logo {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .logo-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        animation: pulse 2s infinite;
+      }
+
+      .logo-text {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(59, 130, 246, 0.3);
+        border-top: 3px solid #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+      }
+
+      .loading-text {
+        color: #94a3b8;
+        font-size: 1rem;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+      }
+
+      /* Background Elements */
+      .bg-elements {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .bg-grid {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+          linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+        background-size: 50px 50px;
+        opacity: 0.3;
+      }
+
+      .floating-shapes {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+
+      .shape {
+        position: absolute;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+        animation: float 6s ease-in-out infinite;
+      }
+
+      .shape-1 {
+        width: 200px;
+        height: 200px;
+        top: 10%;
+        left: 5%;
+        animation-delay: 0s;
+      }
+
+      .shape-2 {
+        width: 150px;
+        height: 150px;
+        top: 60%;
+        left: 80%;
+        animation-delay: 2s;
+      }
+
+      .shape-3 {
+        width: 100px;
+        height: 100px;
+        top: 30%;
+        left: 70%;
+        animation-delay: 4s;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(180deg); }
+      }
+
+      /* Dashboard Overlay and Container */
+      .dashboard-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        z-index: 999;
+        display: none;
+      }
+
+      .dashboard-overlay.active {
+        display: block;
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      .dashboard-preview {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 95%;
+        max-width: 1200px;
+        max-height: 90vh;
+        background: #ffffff;
+        border-radius: 24px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        padding: 2rem;
+        z-index: 1000;
+        display: none;
+        overflow-y: auto;
+      }
+
+      .dashboard-preview.active {
+        display: block;
+        animation: slideUp 0.5s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -40%);
+        }
+        to {
+          opacity: 1;
+          transform: translate(-50%, -50%);
+        }
+      }
+
+      .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .dashboard-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .user-welcome {
+        color: #64748b;
+        font-size: 1rem;
+      }
+
+      .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      }
+
+      .stat-card:hover {
+        transform: translateY(-5px);
+        border-color: #3b82f6;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+      }
+
+      .stat-1 .stat-icon { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
+      .stat-2 .stat-icon { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+      .stat-3 .stat-icon { background: rgba(168, 85, 247, 0.1); color: #7c3aed; }
+      .stat-4 .stat-icon { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: #1e293b;
+      }
+
+      .stat-label {
+        color: #64748b;
+        font-size: 0.9rem;
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      @media (max-width: 1024px) {
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .credentials-section, .activity-section {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .section-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .btn {
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: none;
+        outline: none;
+        font-size: 0.9rem;
+      }
+
+      .btn-outline {
+        background: transparent;
+        border: 1px solid #3b82f6;
+        color: #3b82f6;
+      }
+
+      .btn-outline:hover {
+        background: rgba(59, 130, 246, 0.1);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+      }
+
+      /* FIX: Form elements for light mode */
+      select, input, textarea {
+        background: #ffffff !important;
+        color: #1e293b !important;
+        border: 1px solid #d1d5db !important;
+      }
+
+      select option {
+        background: #ffffff !important;
+        color: #1e293b !important;
+      }
+
+      select:focus, input:focus, textarea:focus {
+        border-color: #3b82f6 !important;
+        outline: none !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+      }
+
+      .credentials-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+      }
+
+      @media (max-width: 768px) {
+        .credentials-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .credential-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .credential-card:hover {
+        border-color: #3b82f6;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .credential-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .credential-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+      }
+
+      .credential-1 .credential-icon { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
+      .credential-2 .credential-icon { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+      .credential-3 .credential-icon { background: rgba(168, 85, 247, 0.1); color: #7c3aed; }
+      .credential-4 .credential-icon { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+
+      .credential-name {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #1e293b;
+      }
+
+      .credential-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .credential-field {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+      }
+
+      .field-name {
+        color: #64748b;
+      }
+
+      .field-value {
+        color: #1e293b;
+        font-weight: 500;
+      }
+
+      .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .status-verified { background: rgba(34, 197, 94, 0.1); color: #16a34a; border: 1px solid rgba(34, 197, 94, 0.3); }
+      .status-pending { background: rgba(245, 158, 11, 0.1); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); }
+      .status-expired { background: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+      .activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(59, 130, 246, 0.1);
+        color: #2563eb;
+      }
+
+      .activity-content {
+        flex: 1;
+      }
+
+      .activity-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+        color: #1e293b;
+      }
+
+      .activity-time {
+        color: #64748b;
+        font-size: 0.8rem;
+      }
+
+      .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      .action-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .action-card:hover {
+        border-color: #3b82f6;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .action-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        background: rgba(59, 130, 246, 0.1);
+        color: #2563eb;
+      }
+
+      .action-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #1e293b;
+      }
+
+      .action-desc {
+        color: #64748b;
+        font-size: 0.85rem;
+      }
+
+      .close-dashboard {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        background: none;
+        border: none;
+        color: #64748b;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: color 0.3s;
+        z-index: 1001;
+      }
+
+      .close-dashboard:hover {
+        color: #1e293b;
+      }
+
+      .show-dashboard-btn {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 1rem 2rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        transition: all 0.3s ease;
+        z-index: 100;
+      }
+
+      .show-dashboard-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(59, 130, 246, 0.4);
+      }
+    </style>
   </head>
   <body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+      <div class="loading-logo">
+        <div class="logo-icon">
+          <i class="fas fa-shield-alt"></i>
+        </div>
+        <div class="logo-text">IdentityVault</div>
+      </div>
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Initializing decentralized identity system...</div>
+    </div>
+
+    <!-- Dashboard Overlay (for clicking outside) -->
+    <div class="dashboard-overlay" id="dashboardOverlay"></div>
+
+    <!-- Background Elements -->
+    <div class="bg-elements">
+      <div class="bg-grid"></div>
+      <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+      </div>
+    </div>
+
+    <!-- Dashboard Preview -->
+    <div class="dashboard-preview" id="dashboardPreview">
+      <button class="close-dashboard" id="closeDashboard">
+        <i class="fas fa-times"></i>
+      </button>
+      
+      <div class="dashboard-header">
+        <div class="dashboard-title">Identity Dashboard</div>
+        <div class="user-welcome">Welcome back, Alex!</div>
+      </div>
+
+      <div class="dashboard-stats">
+        <div class="stat-card stat-1">
+          <div class="stat-icon">
+            <i class="fas fa-id-card"></i>
+          </div>
+          <div class="stat-value">12</div>
+          <div class="stat-label">Active Credentials</div>
+        </div>
+        <div class="stat-card stat-2">
+          <div class="stat-icon">
+            <i class="fas fa-shield-check"></i>
+          </div>
+          <div class="stat-value">8</div>
+          <div class="stat-label">Verified Identities</div>
+        </div>
+        <div class="stat-card stat-3">
+          <div class="stat-icon">
+            <i class="fas fa-exchange-alt"></i>
+          </div>
+          <div class="stat-value">24</div>
+          <div class="stat-label">Secure Shares</div>
+        </div>
+        <div class="stat-card stat-4">
+          <div class="stat-icon">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="stat-value">3</div>
+          <div class="stat-label">Pending Actions</div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="credentials-section">
+          <div class="section-header">
+            <div class="section-title">Your Credentials</div>
+            <button class="btn btn-outline">
+              <i class="fas fa-plus"></i> Add New
+            </button>
+          </div>
+          <div class="credentials-grid">
+            <div class="credential-card credential-1">
+              <div class="credential-header">
+                <div class="credential-icon">
+                  <i class="fas fa-passport"></i>
+                </div>
+                <div class="credential-name">Digital Passport</div>
+                <div class="status-badge status-verified">Verified</div>
+              </div>
+              <div class="credential-details">
+                <div class="credential-field">
+                  <span class="field-name">Country:</span>
+                  <span class="field-value">United States</span>
+                </div>
+                <div class="credential-field">
+                  <span class="field-name">Expires:</span>
+                  <span class="field-value">Mar 2030</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="credential-card credential-2">
+              <div class="credential-header">
+                <div class="credential-icon">
+                  <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="credential-name">University Degree</div>
+                <div class="status-badge status-verified">Verified</div>
+              </div>
+              <div class="credential-details">
+                <div class="credential-field">
+                  <span class="field-name">University:</span>
+                  <span class="field-value">Stanford</span>
+                </div>
+                <div class="credential-field">
+                  <span class="field-name">Year:</span>
+                  <span class="field-value">2022</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="credential-card credential-3">
+              <div class="credential-header">
+                <div class="credential-icon">
+                  <i class="fas fa-certificate"></i>
+                </div>
+                <div class="credential-name">Professional License</div>
+                <div class="status-badge status-pending">Pending</div>
+              </div>
+              <div class="credential-details">
+                <div class="credential-field">
+                  <span class="field-name">Type:</span>
+                  <span class="field-value">Medical</span>
+                </div>
+                <div class="credential-field">
+                  <span class="field-name">Board:</span>
+                  <span class="field-value">ABMS</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="credential-card credential-4">
+              <div class="credential-header">
+                <div class="credential-icon">
+                  <i class="fas fa-car"></i>
+                </div>
+                <div class="credential-name">Driver's License</div>
+                <div class="status-badge status-expired">Expired</div>
+              </div>
+              <div class="credential-details">
+                <div class="credential-field">
+                  <span class="field-name">State:</span>
+                  <span class="field-value">California</span>
+                </div>
+                <div class="credential-field">
+                  <span class="field-name">Expired:</span>
+                  <span class="field-value">Jan 2023</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="activity-section">
+          <div class="section-header">
+            <div class="section-title">Recent Activity</div>
+          </div>
+          <div class="activity-list">
+            <div class="activity-item">
+              <div class="activity-icon">
+                <i class="fas fa-share"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">Credential Shared</div>
+                <div class="activity-time">2 hours ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">Identity Verified</div>
+                <div class="activity-time">1 day ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon">
+                <i class="fas fa-plus"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">New Credential Added</div>
+                <div class="activity-time">2 days ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon">
+                <i class="fas fa-sync"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">Security Updated</div>
+                <div class="activity-time">1 week ago</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quick-actions" style="margin-top: 1.5rem;">
+            <div class="action-card">
+              <div class="action-icon">
+                <i class="fas fa-qrcode"></i>
+              </div>
+              <div class="action-title">Share QR</div>
+              <div class="action-desc">Generate share code</div>
+            </div>
+            <div class="action-card">
+              <div class="action-icon">
+                <i class="fas fa-history"></i>
+              </div>
+              <div class="action-title">View History</div>
+              <div class="action-desc">Access logs</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Show Dashboard Button -->
+    <button class="show-dashboard-btn" id="showDashboardBtn">
+      <i class="fas fa-tachometer-alt"></i> View Dashboard
+    </button>
+
+    <!-- React App Mount Point -->
     <div id="root"></div>
+
     <script type="module" src="/src/main.jsx"></script>
+
+    <script>
+      // Enhanced loading screen management
+      document.addEventListener('DOMContentLoaded', function() {
+        const loadingScreen = document.getElementById('loadingScreen');
+        const dashboardPreview = document.getElementById('dashboardPreview');
+        const dashboardOverlay = document.getElementById('dashboardOverlay');
+        const showDashboardBtn = document.getElementById('showDashboardBtn');
+        const closeDashboard = document.getElementById('closeDashboard');
+        
+        // Function to close dashboard
+        const closeDashboardModal = () => {
+          dashboardPreview.classList.remove('active');
+          dashboardOverlay.classList.remove('active');
+        };
+
+        // Function to open dashboard
+        const openDashboardModal = () => {
+          dashboardPreview.classList.add('active');
+          dashboardOverlay.classList.add('active');
+        };
+
+        // Dashboard controls
+        showDashboardBtn.addEventListener('click', openDashboardModal);
+
+        closeDashboard.addEventListener('click', closeDashboardModal);
+
+        // Close dashboard when clicking outside
+        dashboardOverlay.addEventListener('click', closeDashboardModal);
+
+        // Close dashboard with Escape key
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && dashboardPreview.classList.contains('active')) {
+            closeDashboardModal();
+          }
+        });
+
+        // Hide loading screen when React app is ready
+        window.addEventListener('reactAppReady', () => {
+          setTimeout(() => {
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+              loadingScreen.style.display = 'none';
+            }, 500);
+          }, 1000);
+        });
+
+        // Fallback: hide loading screen after 3 seconds
+        setTimeout(() => {
+          if (loadingScreen.style.display !== 'none') {
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+              loadingScreen.style.display = 'none';
+            }, 500);
+          }
+        }, 3000);
+
+        // Add some interactive background effects
+        document.addEventListener('mousemove', (e) => {
+          const shapes = document.querySelectorAll('.shape');
+          const mouseX = e.clientX / window.innerWidth;
+          const mouseY = e.clientY / window.innerHeight;
+          
+          shapes.forEach((shape, index) => {
+            const speed = (index + 1) * 0.5;
+            const x = (mouseX - 0.5) * speed * 20;
+            const y = (mouseY - 0.5) * speed * 20;
+            shape.style.transform = `translate(${x}px, ${y}px)`;
+          });
+        });
+      });
+
+      // Dispatch event when React app is ready (this would be called from your React app)
+      window.dispatchReactAppReady = function() {
+        window.dispatchEvent(new Event('reactAppReady'));
+      };
+    </script>
   </body>
 </html>
