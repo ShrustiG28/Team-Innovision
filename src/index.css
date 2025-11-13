@@ -8,33 +8,59 @@
   box-sizing: border-box;
 }
 
+/* Theme-aware body styles */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: all 0.3s ease;
+}
+
+/* Dark theme (default) */
+body {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f8fafc;
+}
+
+/* Light theme */
+body.light-theme {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #0f172a;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar */
+/* Theme-aware scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+body.light-theme ::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #475569;
   border-radius: 4px;
 }
 
+body.light-theme ::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
 ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+body.light-theme ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
